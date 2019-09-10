@@ -1,4 +1,3 @@
-# elasticsearch-cluster-template-openshift
 
 # Set securityContext
       runAsUser: 1000120000 on Openshfit Deployment config
