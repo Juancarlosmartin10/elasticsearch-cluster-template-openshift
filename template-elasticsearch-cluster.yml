@@ -1,0 +1,156 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: elasticsearch-template-cluster
+  annotations:
+    description: "Crate a master/master/master ElasticSearch cluster"
+    tags: "DB,INDEXER"
+objects:
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: elastic-data-1
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 2Gi
+
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: elastic-data-2
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 2Gi
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+   annotations:
+     template.alpha.openshift.io/wait-for-ready: 'true'
+   name: elasticsearch-node1-config
+  spec:
+    template:
+      metadata: 
+        labels:
+          cluster: elasticsearch-node1
+      spec:
+        containers:
+        - name: elasticsearch-node1
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.3.1
+          env: 
+          - name: node.name
+            value: ${NODE1_IP}
+          - name: discovery.seed_hosts
+            value: ${NODE2_IP} 
+          - name: cluster.initial_master_nodes
+            value: ${NODE1_IP},${NODE2_IP}
+          - name: cluster.name
+            value: victrix-elasticsearch-cluster
+          - name: bootstrap.memory_lock
+            value: "false"             
+          - name: ES_JAVA_OPTS
+            value: -Xms512m -Xmx512m
+          ports:
+          - containerPort: 9200
+            protocol: TCP
+          volumeMounts:
+          - mountPath: "/usr/share/elasticsearch/data"
+            name: elastic-data-1
+        volumes:
+        - name: elastic-data-1
+          persistentVolumeClaim:
+            claimName: elastic-data-1
+    replicas: 1
+    selector:
+      cluster: elasticsearch-node1
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+   annotations:
+     template.alpha.openshift.io/wait-for-ready: 'true'
+   name: elasticsearch-node2-config
+  spec:
+    template:
+      metadata:
+        labels:
+          cluster: elasticsearch-node2
+      spec:
+        containers:
+        - name: elasticsearch-node2
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.3.1
+          env:
+          - name: node.name
+            value: ${NODE2_IP}
+          - name: discovery.seed_hosts
+            value: ${NODE1_IP}
+          - name: cluster.initial_master_nodes
+            value: ${NODE1_IP},${NODE2_IP}
+          - name: cluster.name
+            value: victrix-elasticsearch-cluster
+          - name: bootstrap.memory_lock
+            value: "false"
+          - name: ES_JAVA_OPTS
+            value: -Xms512m -Xmx512m
+          ports:
+          - containerPort: 9200
+            protocol: TCP
+          volumeMounts:
+          - mountPath: "/usr/share/elasticsearch/data"
+            name: elastic-data-2
+        volumes:
+        - name: elastic-data-2
+          persistentVolumeClaim:
+            claimName: elastic-data-2
+    replicas: 1
+    selector:
+      cluster: elasticsearch-node2
+
+    
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: elasticsearch-service-access-node1
+    labels:
+        cluster: elasticsearch-node1
+  spec:
+    clusterIP: ${NODE1_IP}
+    ports:
+      - name: 9200-tcp
+        port: 9200
+        targetPort: 9200
+        protocol: TCP
+    selector:
+      cluster: elasticsearch-node1 
+      
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: elasticsearch-service-access-node2
+    labels:
+        cluster: elasticsearch-node2
+  spec:
+    clusterIP: ${NODE2_IP}
+    ports:
+      - name: 9200-tcp
+        port: 9200
+        targetPort: 9200
+        protocol: TCP
+    selector:
+      cluster: elasticsearch-node2
+      
+parameters:
+  - name: NODE1_IP
+    description: "Ip nodo 1 del cluster"
+    displayName: ip-node1
+    requiered: true
+  - name: NODE2_IP
+    description: "Ip nodo 1 del cluster"
+    displayName: ip-node2
+    requiered: true
