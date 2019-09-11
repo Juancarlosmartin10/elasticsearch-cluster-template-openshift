@@ -59,6 +59,8 @@ objects:
           ports:
           - containerPort: 9200
             protocol: TCP
+          - containerPort: 9300
+            protocol: TCP
           volumeMounts:
           - mountPath: "/usr/share/elasticsearch/data"
             name: elastic-data-1
@@ -101,6 +103,8 @@ objects:
           ports:
           - containerPort: 9200
             protocol: TCP
+          - containerPort: 9300
+            protocol: TCP
           volumeMounts:
           - mountPath: "/usr/share/elasticsearch/data"
             name: elastic-data-2
@@ -126,6 +130,10 @@ objects:
         port: 9200
         targetPort: 9200
         protocol: TCP
+      - name: 9300-tcp
+        port: 9300
+        targetPort: 9300
+        protocol: TCP
     selector:
       cluster: elasticsearch-node1 
       
@@ -141,6 +149,10 @@ objects:
       - name: 9200-tcp
         port: 9200
         targetPort: 9200
+        protocol: TCP
+      - name: 9300-tcp
+        port: 9300
+        targetPort: 9300
         protocol: TCP
     selector:
       cluster: elasticsearch-node2
