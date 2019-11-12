@@ -64,6 +64,8 @@ objects:
           volumeMounts:
           - mountPath: "/usr/share/elasticsearch/data"
             name: elastic-data-1
+        securityContext:
+          runAsUser: 1000120000
         volumes:
         - name: elastic-data-1
           persistentVolumeClaim:
@@ -108,6 +110,8 @@ objects:
           volumeMounts:
           - mountPath: "/usr/share/elasticsearch/data"
             name: elastic-data-2
+        securityContext:
+          runAsUser: 1000120000
         volumes:
         - name: elastic-data-2
           persistentVolumeClaim:
